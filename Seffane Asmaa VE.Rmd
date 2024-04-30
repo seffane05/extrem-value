@@ -1,0 +1,363 @@
+---
+title: "Seffane VE"
+author: "SEFFANE Asmaa"
+date: "2023-07-31"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+INTRODUCTION:
+
+Extreme value theory is concerned with the statistical properties of the extreme events related to a random variable and the understanding and applications of their probability distributions.
+
+In this project, I will study two data:
+
+Fort Collins (Colorado)
+Daily precipitation amounts (inches) from a single rain gauge in Fort Collins, Colorado.
+The variable of interest is the daily precipitation amount (inches) : Prec.
+
+Dowjones:
+This data shows the daily closing prices of the Dow Jones Index over a 5-year period.
+Evidently, the level of the process has changed dramatically over the observed period, and issues about extremes of daily behavior are swamped by long-term time variation in the series.
+
+Fort Collins Colorado:
+
+Descriptives statistics:
+
+I start  by requiring all the packages i will need:
+
+```{r}
+require(evd)
+require(evir)
+require(ismev)
+require(fExtremes)
+require(extRemes)
+```
+
+```{r}
+data(Fort)
+str(Fort$Prec)
+length(Fort$Prec)
+summary(Fort)
+plot(Fort$Prec, col = "blue",pch=16)
+boxplot(Fort$Prec)
+hist(Fort$Prec, col = "purple")
+emplot(Fort$Prec, col = "blue")
+```
+As it's required, I have to use both approaches (GEV and GPD) and compare them.
+
+The Generalized Extreme Value distribution : GEV
+
+The block maxima approach:
+
+```{r}
+bmFort<- blockmaxxer(Fort, blocks = Fort$year, which="Prec")
+head(bmFort)
+length(as.numeric(rownames(bmFort)))
+plot(Fort$Prec,ylab = "Prec",col = "blue",pch = 16)
+points(as.numeric(rownames(bmFort)),bmFort$Prec, col="red", pch=16)
+```
+
+Maximum Likelihood Estimators:
+```{r}
+FitFortMle = fevd(bmFort$Prec, type="GEV", method="MLE")
+FitFortMle
+ci(FitFortMle,type="parameter")
+
+```
+
+```{r}
+plot(FitFortMle,type="qq")
+plot(FitFortMle,type="qq2")
+plot(FitFortMle,type="density")
+plot(FitFortMle,type="rl")
+
+```
+
+
+I will try the Gumbel model:
+
+```{r}
+FitFortGumbelMle=fevd(bmFort$Prec,type="Gumbel",method="MLE")
+FitFortGumbelMle
+ci(FitFortGumbelMle)
+```
+
+```{r}
+plot(FitFortGumbelMle,type="qq")
+plot(FitFortGumbelMle,type="qq2")
+plot(FitFortGumbelMle,type="density")
+plot(FitFortGumbelMle,type="rl")
+
+```
+
+
+COMPARAISON:
+
+```{r}
+lr.test(FitFortMle,FitFortGumbelMle)
+```
+Probability Weighted Moment : PWM
+
+```{r}
+FitFortMoments=fevd(bmFort$Prec,type="GEV",method="Lmoments")
+FitFortMoments
+ci(FitFortMoments,type="parameter")
+```
+```{r}
+plot(FitFortMoments)
+```
+
+Return Level for Fort GEV MLE and PWM:
+
+```{r}
+return.level(FitFortMle, return.period = c(100, 1000))
+
+return.level(FitFortGumbelMle, return.period = c(100, 1000))
+
+return.level(FitFortMoments, return.period = c( 100, 1000))
+
+```
+
+```{r}
+summary(Fort$Prec)
+```
+
+The Generalized Pareto Distribution:
+
+```{r}
+plot(Fort$Prec,type="h",col="blue")
+points(as.numeric(rownames(bmFort)),bmFort$Prec, col="red", pch=16)
+
+```
+
+
+```{r}
+plot(Fort$Prec,type="h",col="blue")
+abline(h=1, col="red",lwd=2)
+```
+
+
+```{r}
+length(Fort$Prec > 2)
+
+```
+
+```{r}
+plot(Fort$Prec,type="h",col="blue")
+abline(h=2, col="red",lwd=2)
+```
+
+```{r}
+ mrlplot(Fort$Prec)
+```
+
+
+
+```{r}
+threshrange.plot(Fort$Prec, r = c(1, 2), nint=10)
+```
+1.2 or 1.5
+
+I choose 1.2
+Maximum Likelihood Estimators : MLE
+```{r}
+FitFortgpdMle =fevd(Fort$Prec,threshold=1.2,type="GP",method="MLE",time.units="days")
+FitFortgpdMle
+ci(FitFortgpdMle,type="parameter")
+```
+
+```{r}
+plot(FitFortgpdMle,type="qq")
+plot(FitFortgpdMle,type="qq2")
+plot(FitFortgpdMle,type="density")
+plot(FitFortgpdMle,type="rl")
+```
+
+```{r}
+FitFortgpdMleExp=fevd(Fort$Prec,threshold=1.2,type="Exponential",method="MLE",time.units="days")
+FitFortgpdMleExp
+ci(FitFortgpdMleExp,type="parameter")
+```
+
+
+```{r}
+plot(FitFortgpdMleExp,type="qq")
+plot(FitFortgpdMleExp,type="qq2")
+plot(FitFortgpdMleExp,type="density")
+plot(FitFortgpdMleExp,type="rl")
+```
+
+Probability Weighted Moment PWM:
+
+```{r}
+FitFortgpdMoments=fevd(Fort$Prec,threshold=1.2,type="GP",method="Lmoments",time.units="days")
+FitFortgpdMoments
+ci(FitFortgpdMoments,type="parameter")
+
+```
+
+```{r}
+plot(FitFortgpdMoments,type="qq")
+plot(FitFortgpdMoments,type="qq2")
+plot(FitFortgpdMoments,type="density")
+plot(FitFortgpdMoments,type="rl")
+```
+
+Return Level:
+```{r}
+return.level(FitFortgpdMle, return.period = c(20, 100, 1000))
+
+return.level(FitFortgpdMleExp, return.period = c(20, 100, 1000))
+
+return.level(FitFortgpdMoments, return.period = c(20, 100, 1000))
+
+```
+
+COMPARAISON:
+
+COMPARAISON between GEV and GPD:
+
+CONCLUSION:
+
+
+DATA OF portpirie
+
+```{r}
+data(portpirie)
+str(portpirie)
+length(portpirie)
+summary(portpirie)
+plot(portpirie$SeaLevel, col = "blue", pch = 16)
+boxplot(portpirie$SeaLevel)
+hist(portpirie$SeaLevel, col = "purple")
+emplot(portpirie$SeaLevel, col = "blue")
+```
+
+
+The Generalized Extreme Value distribution : GEV
+
+The block maxima approach:
+
+```{r}
+bmSea<- blockmaxxer(portpirie, blocks = portpirie$Year, which="SeaLevel")
+head(bmSea)
+as.numeric(rownames(bmSea))
+length(as.numeric(rownames(bmSea)))
+plot(portpirie$SeaLevel,ylab = "Sealevel",col = "blue",pch = 16)
+points(as.numeric(rownames(bmSea)),portpirie$SeaLevel, col="red", pch=16)
+```
+
+Maximum Likelihood Estimators:
+```{r}
+FitSeaMle = fevd(portpirie$SeaLevel, type="GEV", method="MLE")
+FitSeaMle
+ci(FitSeaMle,type="parameter")
+```
+
+```{r}
+plot(FitSeaMle,type="qq")
+plot(FitSeaMle,type="qq2")
+plot(FitSeaMle,type="density")
+plot(FitSeaMle,type="rl")
+```
+
+
+
+
+I will try the Gumbel model:
+
+```{r}
+FitSeaGumbelMle=fevd(portpirie$SeaLevel,type="Gumbel",method="MLE")
+FitSeaGumbelMle
+ci(FitSeaGumbelMle)
+```
+
+
+
+```{r}
+plot(FitSeaGumbelMle,type="qq")
+plot(FitSeaGumbelMle,type="qq2")
+plot(FitSeaGumbelMle,type="density")
+plot(FitSeaGumbelMle,type="rl")
+```
+
+COMPARAISON:
+
+```{r}
+lr.test(FitSeaMle,FitSeaGumbelMle)
+```
+Probability Weighted Moment : PWM
+
+```{r}
+FitSeaMoments=fevd(portpirie$SeaLevel,type="GEV",method="Lmoments")
+FitSeaMoments
+ci(FitSeaMoments,type="parameter")
+```
+
+```{r}
+plot(FitSeaMoments)
+```
+
+Return Level for Fort GEV MLE and PWM:
+
+```{r}
+return.level(FitSeaMle, return.period = c(100, 1000))
+
+return.level(FitSeaGumbelMle, return.period = c(100, 1000))
+
+return.level(FitSeaMoments, return.period = c( 100, 1000))
+
+summary(portpirie$SeaLevel)
+
+```
+Conclusion
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
